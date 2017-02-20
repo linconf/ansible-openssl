@@ -1,0 +1,10 @@
+#{{ ansible_managed_custom | default( ansible_managed ) }}
+
+{% for cert in openssl_add_cert %}
+ssl-cert-check -b -a -x {{openssl_check_cert_days}} {# -#}
+  -e {{openssl_check_cert_email}} -d "{{ openssl_path }}{{ cert.path }}/*.pem"
+{% endfor %}
+{% for cert in openssl_push_cert %}
+ssl-cert-check -b -a -x {{openssl_check_cert_days}} {# -#}
+  -e {{openssl_check_cert_email}} -d "{{ openssl_path }}{{ cert.path }}/*.pem"
+{% endfor %}

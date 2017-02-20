@@ -1,0 +1,49 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: php :: tasks - main.yml
+#| 
+
+
+#|  Initialize Play
+
+- name: main - Define run SALT
+  set_fact:
+    _openssl_name_salt: "{{ 999999 | random(start=900000, step=1) }}"
+  run_once: yes
+  tags: [ 'openssl', 'openssl-renew' ]
+
+- name: main - Include OS-specific variables
+  include: 'setup.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl' ]
+
+- name: main - Include OS-specific variables
+  include: 'config.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl' ]
+
+- name: main - Generate SSL Cert / Key
+  include: 'generate.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl' ]
+
+- name: main - Generate SSL Cert / Key
+  include: 'renew.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl', 'openssl-renew' ]
+
+- name: main - Deploy Certs to Remote
+  include: 'push.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl' ]
+
+- name: main - Retrieve Certs from Remote
+  include: 'pull.yml'
+  when: openssl_role_enabled | bool
+  tags: [ 'openssl', 'openssl-renew' ]
+
+- name: main - Retrieve Certs from Remote
+  include: 'check.yml'
+  when: (openssl_role_enabled | bool) and
+    (openssl_check_cert | bool)
+  tags: [ 'openssl', 'openssl-check' ]

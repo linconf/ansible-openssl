@@ -1,0 +1,57 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - generate.yml
+#| 
+
+- name: renew - Self-Signed Certificate
+  shell: |
+    if [ -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }} ] ; then
+    mv "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}" \
+    "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}.{{ansible_date_time.date}}";
+    fi
+    if [ -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }} ] && \
+    [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }} ] ; then
+    openssl req -x509 -batch -nodes -sha256 -extensions v3_ca -new -days {{openssl_days}} \
+    -key "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}" \
+    -out "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}" \
+    -subj "/C={{item.country | d(openssl_country)}}/ST={{item.state | d(openssl_state)}}/L={{item.locality | d(openssl_locality)}}\
+    /O={{item.organization | d(openssl_organization)}}/CN={{item.common_name | d(ansible_fqdn)}}";
+    fi
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}.{{ansible_date_time.date}}'
+  when: (item.self_signed | d(openssl_generate_self_signed)) and
+    (item.renew | d(False))
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+# - name: Debugging Information  
+#   debug: msg="Debug '{{ openssl_name_salt }}'"
+
+- name: renew - Verify Cert Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: (item.self_signed | d(openssl_generate_self_signed)) and
+    (item.renew | d(False))
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: renew - Verify Key Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: item.renew | d(False)
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'

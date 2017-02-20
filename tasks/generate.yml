@@ -1,0 +1,150 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - generate.yml
+#| 
+
+
+#|  Generate Certificates
+
+- name: generate - RSA Key and CSR Request
+  shell: |
+    if [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }} ] &&
+    [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }} ] ; then
+    openssl req -batch -nodes -sha256 \
+    -newkey rsa:{{ item.key_size | d(openssl_key_size) }} -keyout "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}" \
+    -out "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.csr_name | d(openssl_csr_name) }}" \
+    -subj "/C={{item.country | d(openssl_country)}}/ST={{item.state | d(openssl_state)}}/L={{item.locality | d(openssl_locality)}}\
+    /O={{item.organization | d(openssl_organization)}}/CN={{item.common_name | d(ansible_fqdn)}}";
+    fi
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}'
+  when: not item.self_signed | d(openssl_generate_self_signed)
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - Verify CSR Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.csr_name | d(openssl_csr_name) }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: not item.self_signed | d(openssl_generate_self_signed)
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - RSA Key and Self-Signed Certificate
+  shell: |
+    if [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }} ] && \
+    [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }} ] ; then
+    openssl req -x509 -batch -nodes -sha256 -extensions v3_ca -days {{openssl_days}} \
+    -newkey rsa:{{ openssl_key_size }} -keyout "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}" \
+    -out "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}" \
+    -subj "/C={{item.country | d(openssl_country)}}/ST={{item.state | d(openssl_state)}}/L={{item.locality | d(openssl_locality)}}\
+    /O={{item.organization | d(openssl_organization)}}/CN={{item.common_name | d(ansible_fqdn)}}";
+    fi
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}'
+  when: item.self_signed | d(openssl_generate_self_signed)
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+# - name: Debugging Information  
+#   debug: msg="Debug '{{ openssl_name_salt }}'"
+
+- name: generate - Verify Cert Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: item.self_signed | d(openssl_generate_self_signed)
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - Verify Key Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - pkcs12 SSL Certificate
+  shell: |
+    if [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.pkcs12_name | d(ansible_fqdn) }}{{ item.pkcs12_extension | d(".p12") }} ] ; then
+    openssl pkcs12 -export -in "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.crt_name | d(openssl_crt_name) }}" \
+    -inkey "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.key_name | d(openssl_key_name) }}" \
+    -out "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.pkcs12_name | d(ansible_fqdn) }}{{ item.pkcs12_extension | d(".p12") }}" \
+    -name "{{ item.pkcs12_name | d(ansible_fqdn) }}" -passin pass:"{{ item.pkcs12_passin | d(openssl_pkcs12_passin) }}" \
+    -passout pass:"{{ item.pkcs12_passout | d(openssl_pkcs12_passout) }}";
+    fi
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.pkcs12_name | d(ansible_fqdn) }}{{ item.pkcs12_extension | d(".p12") }}'
+  when: item.pkcs12 is defined and item.pkcs12 | bool
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - Verify pkcs12 Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.pkcs12_name | d(ansible_fqdn) }}{{ item.pkcs12_extension | d(".p12") }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: item.pkcs12 is defined and item.pkcs12 | bool
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+#- name: generate - Check if Java is Installed
+#  shell: type -p java
+#  register: java_path
+#  failed_when: "'' in java_path.stdout"
+#  when: openssl_jks_enabled
+
+- name: generate - Java Keystore
+  shell: |
+    if [ ! -f {{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.jks_name | d(ansible_fqdn) }}{{ item.jks_extension | d(".jks") }} ] ; then
+    keytool -importkeystore -srckeystore "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.pkcs12_name | d(ansible_fqdn) }}{{ item.pkcs12_extension | d(".p12") }}" \
+    -srcstoretype PKCS12 -srcstorepass "{{ item.pkcs12_passout | d(openssl_pkcs12_passout) }}" \
+    -alias "{{ item.jks_alias | d(ansible_fqdn) }}" -deststorepass "{{ item.jks_passout | d(openssl_jks_passout) }}" \
+    -destkeypass "{{ item.jks_passkey | d(openssl_jks_passkey) }}" \
+    -destkeystore "{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.jks_name | d(ansible_fqdn) }}{{ item.jks_extension | d(".jks") }}";
+    fi
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.jks_name | d(ansible_fqdn) }}{{ item.jks_extension | d(".jks") }}'
+  when: item.jks is defined and item.jks | bool
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: generate - Verif Java Keystore Permissions
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}/{{ item.jks_name | d(ansible_fqdn) }}{{ item.jks_extension | d(".jks") }}'
+    state: file
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ item.mode | d(openssl_file_mode) }}'
+  when: item.jks is defined and item.jks | bool
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'

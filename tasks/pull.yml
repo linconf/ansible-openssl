@@ -1,0 +1,47 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - pull.yml
+#| 
+
+
+#|  Pull Certificates from Remote
+
+- name: pull - Move CRT File
+  fetch:
+    src: '{{ openssl_path }}/{{ item.path }}/{{ item.crt_name }}'
+    dest: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.crt_name }}'
+    flat: yes
+    fail_on_missing: yes
+  when: item.crt_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_pull_cert }}'
+
+- name: pull - Move Key File
+  fetch:
+    src: '{{ openssl_path }}/{{ item.path }}/{{ item.key_name }}'
+    dest: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.key_name }}'
+    flat: yes
+    fail_on_missing: yes
+  when: item.key_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_pull_cert }}'
+
+- name: pull - Move Key File
+  fetch:
+    src: '{{ openssl_path }}/{{ item.path }}/{{ item.pkcs12_name }}'
+    dest: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.pkcs12_name }}'
+    flat: yes
+    fail_on_missing: yes
+  when: item.pkcs12_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_pull_cert }}'
+
+- name: pull - Move Key File
+  fetch:
+    src: '{{ openssl_path }}/{{ item.path }}/{{ item.jks_name }}'
+    dest: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.jks_name }}'
+    flat: yes
+    fail_on_missing: yes
+  when: item.jks_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_pull_cert }}'

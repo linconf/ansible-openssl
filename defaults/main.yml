@@ -1,0 +1,98 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: defaults - main.yml
+#| 
+
+
+openssl_role_enabled: True
+
+#|  Packages and Services 
+
+openssl_country: 'US'
+openssl_locality: 'Some-Location'
+openssl_organization: 'Company Name'
+openssl_state: 'Some-State'
+openssl_days: '365'
+#openssl_fields: '/C={{openssl_country}}/ST={{openssl_state}}/L={{openssl_locality}}/O={{openssl_organization}}/CN={{ansible_fqdn}}'
+
+openssl_path: '/etc/ssl/'
+openssl_crt_name: '{{ansible_fqdn}}.{{ _openssl_name_salt }}.pem'
+openssl_key_name: '{{ansible_fqdn}}.{{ _openssl_name_salt }}.key'
+openssl_csr_name: '{{ansible_fqdn}}.{{ _openssl_name_salt }}.csr'
+openssl_dhparam_name: 'dhparam.{{ openssl_name_salt }}.pem'
+openssl_path_owner: 'root'
+openssl_path_group: 'root'
+openssl_path_mode: '0755'
+openssl_file_mode: '0644'
+# or give group permissions (ToDo)
+
+openssl_add_cert: []
+#  - path: '{{ ansible_fqdn }}'
+#    crt_name: '{{ openssl_crt_name }}'
+#    key_name: '{{ openssl_key_name }}'
+#    #|  OPTIONAL key PARAMETERS
+#    self_signed: '{{ openssl_generate_self_signed }}'
+#    key_size: '{{ openssl_key_size }}'
+#    #|  OPTIONAL PARAMETERS
+#    csr_name: '{{ openssl_csr_name }}'
+#    dhparam_name:  '{{ openssl_dhparam_name }}'
+#    self_signed: '{{ openssl_generate_self_signed }}'
+#    owner:  '{{ openssl_path_owner }}'
+#    group:  '{{ openssl_path_group }}'
+#    mode:  '{{ openssl_file_mode }}'
+#    #| Optional: Used for pkcs12 / jks certificate creation
+#    #| Assumes crt_name and key_name are in same path
+#    pkcs12: false
+#    pkcs12_name: '{{ansible_fqdn}}'
+#    pkcs12_extension: '.p12'
+#    pkcs12_passin: '{{ openssl_pkcs12_passin }}'
+#    pkcs12_passout: '{{ openssl_pkcs12_passout }}'
+#    #| (Requires Java)
+#    jks: false
+#    jks_name: '{{ ansible_fqdn }}'
+#    jks_extension: '.jks'
+#    jks_alias: '{{ ansible_fqdn }}'
+#    jks_passkey: '{{ openssl_jks_passkey }}'
+#    jks_passout: '{{ openssl_jks_passout }}'
+
+openssl_add_host_cert: []
+openssl_add_group_cert: []
+
+openssl_generate_self_signed: true
+openssl_key_size: '2048'
+openssl_generate_diffie_param: false
+openssl_diffie_param_size: '2048'
+
+
+openssl_secret_path: 'secret/ssl/'
+
+#|  "Pull" Cert(s) from Remote to Ansible
+openssl_pull_cert: []
+#  - path: 'my.fqdn.com/filebeat/'
+#    crt_name: 'my-hostname.filebeat.pem'
+#    key_name: 'my-hostname.filebeat.key'
+#    pkcs12_name: 'my-hostname.filebeat.p12'
+#    jks_name: 'my-hostname.filebeat.jks'
+
+#|  "Push" Cert(s) from Ansible to Remote
+openssl_push_cert: []
+#  - path: 'my-hostname.com/filebeat/'
+#    crt_name: 'my-hostname.filebeat.pem'
+#    key_name: 'my-hostname.filebeat.key'
+
+openssl_pkcs12_keystore_extension: '.p12'
+openssl_pkcs12_passin: ''
+openssl_pkcs12_passout: ''
+openssl_jks_keystore_extension: '.jks'
+openssl_jks_passkey: ''
+openssl_jks_passout: ''
+
+
+openssl_check_cert: False
+openssl_check_cert_days: '7'
+openssl_check_cert_email: 'you@example.com'
+openssl_check_cert_cron: True
+openssl_check_cert_cronjob: 
+  - job: '{{ openssl_path }}check-certs.sh'
+    minute: 0
+    hour: 1

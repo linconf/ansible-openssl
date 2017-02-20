@@ -1,0 +1,51 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - push.yml
+#| 
+
+
+#|  Push Certificates to Remote
+
+- name: push - Ensure Folder Exists
+  file:
+    path: '{{ openssl_path }}/{{ item.path }}/'
+    state: directory
+    owner: '{{ openssl_path_owner }}'
+    group: '{{ openssl_path_group }}'
+    mode: '{{ openssl_path_mode }}'
+  when: item.crt_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_push_cert }}'
+
+- name: push - Move CRT File
+  copy:
+    src: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.crt_name }}'
+    dest: '{{ openssl_path }}/{{ item.path }}/{{ item.crt_name }}'
+    owner: '{{ openssl_path_owner }}'
+    group: '{{ openssl_path_group }}'
+    mode: '{{ openssl_file_mode }}'
+  when: item.crt_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_push_cert }}'
+
+- name: push - Ensure Folder Exists
+  file:
+    path: '{{ openssl_path }}/{{ item.path }}/'
+    state: directory
+    owner: '{{ openssl_path_owner }}'
+    group: '{{ openssl_path_group }}'
+    mode: '{{ openssl_path_mode }}'
+  when: item.key_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_push_cert }}'
+
+- name: push - Move Key File
+  copy:
+    src: '{{ openssl_secret_path }}/{{ item.path }}/{{ item.key_name }}'
+    dest: '{{ openssl_path }}/{{ item.path }}/{{ item.key_name }}'
+    owner: '{{ openssl_path_owner }}'
+    group: '{{ openssl_path_group }}'
+    mode: '{{ openssl_file_mode }}'
+  when: item.key_name is defined and item.path is defined
+  with_items:
+    - '{{ openssl_push_cert }}'

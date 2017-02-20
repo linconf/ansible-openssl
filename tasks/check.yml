@@ -1,0 +1,33 @@
+---
+
+#|  Install and configure ssl-cert-check
+
+- name: check - Copy ssl-cert-check to remote
+  copy:
+    src: 'ssl-cert-check'
+    dest: '/usr/local/sbin/ssl-cert-check'
+    owner: '{{ openssl_check_owner | d("root") }}'
+    group: '{{ openssl_check_group | d("root") }}'
+    mode: '{{ openssl_check_mode | d("700") }}'
+
+- name: check - Generate check-certs.sh script
+  template:
+    src: 'etc-ssl-checkcerts.sh.j2'
+    dest: '{{ openssl_path }}/check-certs.sh'
+    owner: '{{ openssl_check_owner | d("root") }}'
+    group: '{{ openssl_check_group | d("root") }}'
+    mode: '{{ openssl_check_mode | d("700") }}'
+
+- name: check - Add a crontab entry
+  cron:
+    name: '{{ item.name | default("check-ssl-certs") }}'
+    job: '{{ item.job | default(item) }}'
+    day: '{{ item.day | default(omit) }}'
+    hour: '{{ item.hour | default(omit) }}'
+    minute: '{{ item.minute | default(omit) }}'
+    month: '{{ item.month | default(omit) }}'
+    state: '{{ item.state | default(omit) }}'
+    user: '{{ item.user | default("root") }}'
+  when: openssl_check_cert_cron | bool
+  with_flattened:
+    - '{{ openssl_check_cert_cronjob }}'

@@ -1,0 +1,13 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - setup.yml
+#| 
+
+
+#|  Install OpenSSL
+
+- name: setup - Ensure OpenSSL is Installed
+  apt:
+    name: 'openssl'
+    state: present
+  when: ansible_os_family == "Debian"

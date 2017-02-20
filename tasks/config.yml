@@ -1,0 +1,30 @@
+---
+#| - - - - - - - - - - - - - - - - - -
+#| Ansible :: openssl :: tasks - config.yml
+#| 
+
+
+#|  Configure OpenSSL
+
+- name: config - Ensure Folders Exist
+  file:
+    path: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}'
+    state: directory
+    owner: '{{ item.owner | d(openssl_path_owner) }}'
+    group: '{{ item.group | d(openssl_path_group) }}'
+    mode: '{{ openssl_path_mode }}'
+  with_flattened:
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_add_host_cert }}'
+    - '{{ openssl_add_group_cert }}'
+
+- name: config - Generate DHE Parameters
+  command: 'openssl dhparam -out "{{ openssl_path }}/{{item.path | d(ansible_fqdn)}}" "{{item.dhparam_name | d(openssl_dhparam_size)}}"'
+  args:
+    creates: '{{ openssl_path }}/{{ item.path | d(ansible_fqdn) }}'
+  when: openssl_generate_diffie_param
+  with_flattened:
+    - '{{ openssl_cert }}'
+    - '{{ openssl_add_cert }}'
+    - '{{ openssl_group_cert }}'
+
